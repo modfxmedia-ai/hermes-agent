@@ -87,6 +87,64 @@ def get_runtime_agent_kwargs() -> dict[str, Any]:
     return _resolve_runtime_agent_kwargs()
 
 
+def _agent_kwargs_from_runtime(runtime: dict[str, Any]) -> dict[str, Any]:
+    """Keep only runtime fields accepted by ``AIAgent``."""
+    return {
+        "api_key": runtime.get("api_key"),
+        "base_url": runtime.get("base_url"),
+        "provider": runtime.get("provider"),
+        "api_mode": runtime.get("api_mode"),
+        "command": runtime.get("command"),
+        "args": list(runtime.get("args") or []),
+        "credential_pool": runtime.get("credential_pool"),
+    }
+
+
+def _resolve_request_model_runtime(
+    model: str | None,
+    runtime_kwargs: dict[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    """Route provider-qualified web model selections to matching credentials.
+
+    The portal persists model choices as ``provider/model`` (for example,
+    ``anthropic/claude-opus-4-6`` or ``openai/gpt-5.4``).  Historically the
+    web API changed only the model string and kept the configured provider,
+    which could send an OpenAI model to Anthropic.  Resolve the two native
+    providers exposed by the portal per request while leaving unqualified and
+    custom model names on the configured runtime.
+    """
+    effective_model = (model or get_runtime_model()).strip()
+    if not model or not effective_model:
+        return effective_model, runtime_kwargs
+
+    from hermes_cli.model_normalize import detect_vendor, normalize_model_for_provider
+    from hermes_cli.runtime_provider import resolve_runtime_provider
+
+    vendor = detect_vendor(effective_model)
+    if vendor == "anthropic":
+        runtime = resolve_runtime_provider(
+            requested="anthropic",
+            target_model=effective_model,
+        )
+        provider = str(runtime.get("provider") or "anthropic")
+        return normalize_model_for_provider(effective_model, provider), _agent_kwargs_from_runtime(runtime)
+
+    if vendor == "openai":
+        # Direct OpenAI API-key access is represented as a host-gated custom
+        # runtime in Hermes.  The resolver will only attach OPENAI_API_KEY when
+        # this URL belongs to OpenAI, preventing credential leakage.
+        base_url = os.getenv("OPENAI_BASE_URL", "").strip() or "https://api.openai.com/v1"
+        bare_model = effective_model.split("/", 1)[-1]
+        runtime = resolve_runtime_provider(
+            requested="custom",
+            explicit_base_url=base_url,
+            target_model=bare_model,
+        )
+        return bare_model, _agent_kwargs_from_runtime(runtime)
+
+    return effective_model, runtime_kwargs
+
+
 def create_agent(
     *,
     session_id: str,
@@ -104,12 +162,16 @@ def create_agent(
     step_callback=None,
 ) -> AIAgent:
     runtime_kwargs = get_runtime_agent_kwargs()
-    effective_model = model or get_runtime_model()
+    effective_model, runtime_kwargs = _resolve_request_model_runtime(model, runtime_kwargs)
+    from hermes_cli.fallback_config import get_fallback_chain
+
+    fallback_chain = get_fallback_chain(get_config())
     max_iterations = int(os.getenv("HERMES_MAX_ITERATIONS", "90"))
 
     return AIAgent(
         model=effective_model,
         **runtime_kwargs,
+        fallback_model=fallback_chain or None,
         max_iterations=max_iterations,
         quiet_mode=True,
         verbose_logging=False,
