@@ -4,10 +4,28 @@ import { type Brand, alpha } from "../brand/tokens";
 import { BodyCopy, Eyebrow, KineticType, LightSweep } from "../primitives/KineticType";
 import { BrowserFrame, Counter, Rule, Wipe } from "../primitives/Device";
 import { GridField, Marquee, ParallaxRail, ScrollScrub } from "../primitives/Scroll";
+import {
+  AppWindow,
+  Cursor,
+  type AppRow,
+  type FlowStep,
+} from "../primitives/AppUI";
 import { ParticleFormation } from "../primitives/ParticleFormation";
 import { SceneBody, type FormatName, framePad, typeScale } from "./Shell";
 import { track } from "../core/easing";
 import { useSeconds, useStagger } from "../core/timing";
+
+/** Everything the simulated product window needs, as data. */
+export interface AppWindowConfig {
+  title: string;
+  nav: string[];
+  activeNav?: number;
+  url?: string;
+  searchPlaceholder?: string;
+  typed?: { text: string; at: number; over?: number };
+  rows: AppRow[];
+  metric?: { label: string; value: string; at?: number };
+}
 
 export interface SceneCtx {
   brand: Brand;
@@ -508,6 +526,96 @@ export const EndcardScene: React.FC<
             </div>
           </>
         ) : null}
+      </AbsoluteFill>
+    </SceneBody>
+  );
+};
+
+/**
+ * The product, being used.
+ *
+ * A browser frame around a screenshot proves a product exists; a cursor
+ * landing a click and a result arriving proves it works. For an app launch
+ * this is the scene that does the persuading, so it gets the longest hold in
+ * the film and the UI is rebuilt live rather than captured.
+ */
+export const UIFlowScene: React.FC<
+  SceneCtx & {
+    label?: string;
+    headline?: string[];
+    app: AppWindowConfig;
+    steps: FlowStep[];
+  }
+> = ({ brand, format, dur, label, headline, app, steps }) => {
+  const s = typeScale(format);
+  const pad = framePad(format);
+  const landscape = format === "landscape";
+  return (
+    <SceneBody dur={dur}>
+      <GridField brand={brand} opacity={0.22} />
+      <AbsoluteFill
+        style={{
+          flexDirection: landscape ? "row" : "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: landscape ? 56 * s : 38 * s,
+          padding: `${pad.y * 0.55}px ${pad.x * 0.6}px`,
+        }}
+      >
+        {label || headline ? (
+          <div
+            style={{
+              flex: landscape ? "0 1 clamp(300px, 30%, 460px)" : undefined,
+              minWidth: 0,
+            }}
+          >
+            {label ? (
+              <Eyebrow brand={brand} start={0.18} size={14 * s}>
+                {label}
+              </Eyebrow>
+            ) : null}
+            {headline ? (
+              <>
+                <div style={{ height: 22 * s }} />
+                <KineticType
+                  brand={brand}
+                  lines={headline}
+                  size={50 * s}
+                  start={0.3}
+                  stagger={0.07}
+                  lineHeight={1.12}
+                  align={landscape ? "left" : "center"}
+                />
+                <div style={{ height: 24 * s }} />
+                <Rule brand={brand} start={0.85} width={84 * s} />
+              </>
+            ) : null}
+          </div>
+        ) : null}
+
+        <BrowserFrame
+          brand={brand}
+          url={app.url}
+          start={0.4}
+          width={landscape ? "60%" : "96%"}
+          height={landscape ? "80%" : "56%"}
+          tilt={landscape ? -3 : 0}
+          style={{ flexShrink: 0 }}
+        >
+          <AppWindow
+            brand={brand}
+            title={app.title}
+            nav={app.nav}
+            activeNav={app.activeNav}
+            searchPlaceholder={app.searchPlaceholder}
+            typed={app.typed}
+            rows={app.rows}
+            metric={app.metric}
+            start={0.55}
+            scale={landscape ? 1.25 : 1.05}
+          />
+          <Cursor brand={brand} steps={steps} start={0.55} />
+        </BrowserFrame>
       </AbsoluteFill>
     </SceneBody>
   );

@@ -21,7 +21,10 @@ import {
   ProofScene,
   RailScene,
   StatementScene,
+  UIFlowScene,
+  type AppWindowConfig,
 } from "../scenes";
+import type { FlowStep } from "../primitives/AppUI";
 
 /**
  * A film is data.
@@ -38,6 +41,7 @@ export type FilmScene =
   | { kind: "proof"; seconds?: number; label?: string; stats: Array<{ value: number; prefix?: string; suffix?: string; decimals?: number; label: string }> }
   | { kind: "marquee"; seconds?: number; rows: string[][]; headline?: string }
   | { kind: "rail"; seconds?: number; cards: Array<{ title: string; meta?: string }>; headline?: string[] }
+  | { kind: "flow"; seconds?: number; label?: string; headline?: string[]; app: AppWindowConfig; steps: FlowStep[] }
   | { kind: "endcard"; seconds?: number; wordmark: string; tagline?: string; cta?: string; logo?: string };
 
 export interface FilmConfig {
@@ -59,6 +63,7 @@ const DEFAULT_SECONDS: Record<FilmScene["kind"], number> = {
   proof: 3.8,
   marquee: 3.2,
   rail: 3.6,
+  flow: 6.2,
   endcard: 3.6,
 };
 
@@ -158,6 +163,8 @@ export const LaunchFilm: React.FC<FilmConfig> = ({
               <MarqueeScene {...ctx} {...scene} />
             ) : scene.kind === "rail" ? (
               <RailScene {...ctx} {...scene} />
+            ) : scene.kind === "flow" ? (
+              <UIFlowScene {...ctx} {...scene} />
             ) : (
               <EndcardScene {...ctx} {...scene} />
             )}

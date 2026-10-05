@@ -7,6 +7,7 @@ import {
   type FilmScene,
 } from "./templates/LaunchFilm";
 import { NORTHLINE_BRAND, NORTHLINE_SCENES } from "./films/northline";
+import { FLOW_EXAMPLE, FLOW_EXAMPLE_BRAND } from "./films/flow-example";
 import type { Brand } from "./brand/tokens";
 import type { FormatName } from "./scenes/Shell";
 
@@ -35,8 +36,9 @@ const registerFilm = (
   brand: Brand,
   scenes: FilmScene[],
   music?: string,
+  formats: FormatName[] = ["landscape", "vertical", "square"],
 ) =>
-  (Object.keys(FORMAT_SIZE) as FormatName[]).map((format) => {
+  formats.map((format) => {
     const props: FilmConfig = { brand, scenes, format, music };
     return (
       <Composition
@@ -54,5 +56,11 @@ const registerFilm = (
   });
 
 export const Root: React.FC = () => (
-  <>{registerFilm("Northline", NORTHLINE_BRAND, NORTHLINE_SCENES)}</>
+  <>
+    {registerFilm("Northline", NORTHLINE_BRAND, NORTHLINE_SCENES)}
+    {/* Reference composition for the product-interaction scene. */}
+    {registerFilm("FlowExample", FLOW_EXAMPLE_BRAND, FLOW_EXAMPLE, undefined, [
+      "landscape",
+    ])}
+  </>
 );
