@@ -173,7 +173,7 @@ export const ProductScene: React.FC<
         {headline || label ? (
           <div
             style={{
-              flex: format === "landscape" ? "0 1 clamp(260px, 30%, 420px)" : undefined,
+              flex: format === "landscape" ? "0 1 clamp(320px, 32%, 500px)" : undefined,
               minWidth: 0,
             }}
           >
@@ -188,7 +188,7 @@ export const ProductScene: React.FC<
                 <KineticType
                   brand={brand}
                   lines={headline}
-                  size={44 * s}
+                  size={52 * s}
                   start={0.34}
                   stagger={0.07}
                   lineHeight={1.14}
@@ -291,18 +291,18 @@ const StatBlock: React.FC<{
         decimals={decimals}
         start={0.3 + index * 0.18}
         duration={1.5}
-        size={104 * s}
+        size={118 * s}
         color={index === 0 ? brand.color.accent : brand.color.ink}
       />
       <div style={{ height: 14 * s }} />
       <div
         style={{
           fontFamily: brand.type.mono,
-          fontSize: 14 * s,
+          fontSize: 15 * s,
           letterSpacing: `${brand.type.eyebrowTracking}em`,
           textTransform: "uppercase",
           color: brand.color.inkMuted,
-          maxWidth: 240 * s,
+          maxWidth: 250 * s,
           lineHeight: 1.5,
         }}
       >

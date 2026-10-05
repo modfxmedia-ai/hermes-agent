@@ -53,7 +53,7 @@ export type FormatName = keyof typeof SAFE;
  * hand-tuned sizes.
  */
 export const typeScale = (format: FormatName): number =>
-  format === "landscape" ? 1 : format === "vertical" ? 0.72 : 0.78;
+  format === "landscape" ? 1 : format === "vertical" ? 0.8 : 0.82;
 
 export const framePad = (format: FormatName) => SAFE[format];
 

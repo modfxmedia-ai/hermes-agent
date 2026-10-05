@@ -131,24 +131,27 @@ const main = async () => {
     console.log("  ✓ no frame-level issues found\n");
   } else {
     // Collapse runs of the same flag set into one line; a 6-frame SOFT run is
-    // one problem, not six.
-    let runStart = null, runFlags = "";
+    // one problem, not six. Frames must be *adjacent* in the sample index to
+    // merge — otherwise two isolated blips thirteen seconds apart get
+    // reported as one long failure, which is worse than not reporting.
     const runs = [];
+    let cur = null;
     for (const issue of issues) {
       const key = issue.flags.join("+");
-      if (key !== runFlags || runStart === null) {
-        if (runStart !== null) runs.push(runStart);
-        runStart = { ...issue, until: issue.t, n: 1 };
-        runFlags = key;
+      if (cur && cur.key === key && issue.i === cur.lastIndex + 1) {
+        cur.until = issue.t;
+        cur.lastIndex = issue.i;
+        cur.n++;
       } else {
-        runStart.until = issue.t;
-        runStart.n++;
+        if (cur) runs.push(cur);
+        cur = { ...issue, key, until: issue.t, lastIndex: issue.i, n: 1 };
       }
     }
-    if (runStart) runs.push(runStart);
+    if (cur) runs.push(cur);
 
     for (const r of runs) {
-      const span = r.t === r.until ? `${r.t}s` : `${r.t}s–${r.until}s`;
+      const span =
+        r.n === 1 ? `${r.t}s` : `${r.t}s–${r.until}s (${r.n} frames)`;
       console.log(
         `  ! ${r.flags.join("+").padEnd(11)} ${span.padEnd(16)} ` +
           `mean ${r.mean.toFixed(3)}  std ${r.std.toFixed(3)}  edge ${r.edge.toFixed(4)}`,
