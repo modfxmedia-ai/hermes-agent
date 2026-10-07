@@ -434,7 +434,7 @@ export const RailScene: React.FC<
               style={{
                 marginTop: 12 * s,
                 fontFamily: brand.type.mono,
-                fontSize: 12 * s,
+                fontSize: 13 * s,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
                 color: brand.color.inkMuted,
@@ -449,22 +449,32 @@ export const RailScene: React.FC<
 
   return (
     <SceneBody dur={dur}>
-      <AbsoluteFill style={{ opacity: inP * 0.9 }}>
+      <AbsoluteFill style={{ opacity: inP * 0.5 }}>
         <ParallaxRail brand={brand} columns={columns} speed={74} tilt={-8} scale={1.12} />
       </AbsoluteFill>
       {headline ? (
-        <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
-          <KineticType
-            brand={brand}
-            lines={headline}
-            size={84 * s}
-            start={0.55}
-            align="center"
+        <>
+          {/* Scrim. Drifting cards are atmosphere; without this they compete
+              with the line the viewer is supposed to read, and both lose. */}
+          <AbsoluteFill
             style={{
-              textShadow: `0 20px 80px ${brand.color.bg}, 0 0 40px ${brand.color.bg}`,
+              background: `radial-gradient(ellipse 58% 46% at 50% 50%, ${alpha(
+                brand.color.bg,
+                0.93,
+              )} 0%, ${alpha(brand.color.bg, 0.7)} 55%, transparent 100%)`,
+              opacity: inP,
             }}
           />
-        </AbsoluteFill>
+          <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
+            <KineticType
+              brand={brand}
+              lines={headline}
+              size={94 * s}
+              start={0.55}
+              align="center"
+            />
+          </AbsoluteFill>
+        </>
       ) : null}
     </SceneBody>
   );

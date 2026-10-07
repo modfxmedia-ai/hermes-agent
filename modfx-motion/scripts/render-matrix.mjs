@@ -68,15 +68,23 @@ const main = async () => {
       "-frames:v", "1", "-q:v", "2", jpg,
     ]);
 
-    // Replace frame 0's pixels only. Everything else — duration, frame count,
-    // audio — passes through untouched.
+    // Replace frame 0's pixels only, and normalise loudness while we are
+    // re-encoding anyway.
+    //
+    // A cinematic bed masters quiet, and a quiet master sounds weak in a feed
+    // next to everything else. -14 LUFS integrated with a -1.5 dBTP ceiling is
+    // what the social platforms normalise toward, so hitting it ourselves means
+    // the film arrives at the level it was mixed at instead of being pushed
+    // around. Video is untouched: same duration, same frame count.
     const tmp = mp4.replace(/\.mp4$/, ".poster.mp4");
     await sh("ffmpeg", [
       "-v", "error", "-y", "-i", mp4, "-i", jpg,
       "-filter_complex", "[0:v][1:v]overlay=0:0:enable='eq(n,0)'[v]",
       "-map", "[v]", "-map", "0:a?",
       "-c:v", "libx264", "-crf", "17", "-preset", "slow", "-pix_fmt", "yuv420p",
-      "-c:a", "copy", "-movflags", "+faststart", tmp,
+      "-af", "loudnorm=I=-14:TP=-1.5:LRA=11",
+      "-c:a", "aac", "-b:a", "256k", "-ar", "48000",
+      "-movflags", "+faststart", tmp,
     ]);
     await unlink(mp4);
     await rename(tmp, mp4);
