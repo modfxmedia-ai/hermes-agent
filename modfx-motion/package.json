@@ -1,0 +1,32 @@
+{
+  "name": "modfx-motion",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ModFX Media launch-film engine — high-end abstract motion graphics, rendered deterministically from code.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render",
+    "matrix": "node scripts/render-matrix.mjs",
+    "qa": "node scripts/qa-frames.mjs",
+    "capture": "node scripts/capture.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/instrument-sans": "^5.2.8",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource/instrument-serif": "^5.2.8",
+    "@remotion/bundler": "4.0.418",
+    "@remotion/cli": "4.0.418",
+    "@remotion/renderer": "4.0.418",
+    "playwright-core": "^1.56.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.418"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
