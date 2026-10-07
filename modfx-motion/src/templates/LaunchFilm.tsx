@@ -1,6 +1,12 @@
 import React from "react";
-import { AbsoluteFill, Audio, Sequence, useVideoConfig } from "remotion";
-import { type Brand } from "../brand/tokens";
+import {
+  AbsoluteFill,
+  Audio,
+  Sequence,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+import { alpha, type Brand } from "../brand/tokens";
 import { AuroraField } from "../primitives/AuroraField";
 import { FilmGrade } from "../primitives/Film";
 import { Motes } from "../primitives/Scroll";
@@ -44,6 +50,22 @@ export type FilmScene =
   | { kind: "flow"; seconds?: number; label?: string; headline?: string[]; app: AppWindowConfig; steps: FlowStep[] }
   | { kind: "endcard"; seconds?: number; wordmark: string; tagline?: string; cta?: string; logo?: string };
 
+/** Per-frame audio analysis, baked offline by scripts/extract-audio.mjs. */
+export interface AudioEnvelope {
+  fps: number;
+  frames: number;
+  level: number[];
+  bass: number[];
+}
+
+export interface SfxCue {
+  /** staticFile() path. */
+  src: string;
+  /** Seconds from the start of the film. */
+  at: number;
+  volume?: number;
+}
+
 export interface FilmConfig {
   brand: Brand;
   format?: FormatName;
@@ -51,6 +73,22 @@ export interface FilmConfig {
   /** Path from staticFile(). Optional — the films are designed to read muted. */
   music?: string;
   musicVolume?: number;
+  /** Bass/level envelope of `music`, so motion can breathe with the track. */
+  envelope?: AudioEnvelope;
+  /** Continuous room tone. Stops quiet passages sounding like dropped audio. */
+  bed?: string;
+  bedVolume?: number;
+  /**
+   * Placed automatically on every scene cut. The engine already knows where
+   * the cuts are, so the sound design does not have to restate them by hand
+   * and cannot drift when a scene length changes.
+   */
+  cutSound?: string;
+  cutVolume?: number;
+  /** Extra one-off cues, timed from the start of the film. */
+  sfx?: SfxCue[];
+  /** Flash intensity on each cut, 0 disables. */
+  cutFlash?: number;
   /** 2.39 for scope bars, or omit for full frame. */
   letterbox?: number;
 }
@@ -90,7 +128,16 @@ export const filmDurationInFrames = (scenes: FilmScene[], fps: number): number =
  * foreground — there is no moment where two backgrounds are both visible,
  * which is the usual source of muddy transitions.
  */
-const Backdrop: React.FC<{ brand: Brand; total: number }> = ({ brand, total }) => {
+const Backdrop: React.FC<{
+  brand: Brand;
+  total: number;
+  envelope?: AudioEnvelope;
+}> = ({ brand, total, envelope }) => {
+  const frame = useCurrentFrame();
+  // Bass, not full-spectrum level: bass tracks the swells and the pulse, which
+  // is what the eye expects a glow to breathe with. Wideband level follows air
+  // and hats and reads as jitter.
+  const bass = envelope?.bass[Math.min(frame, envelope.bass.length - 1)] ?? 0;
   // Brightness breathes across the film: dim under the opening, lifting into
   // the middle, settling back for the endcard so the wordmark reads cleanly.
   const intensity = useKeys([
@@ -115,9 +162,55 @@ const Backdrop: React.FC<{ brand: Brand; total: number }> = ({ brand, total }) =
 
   return (
     <AbsoluteFill>
-      <AuroraField brand={brand} intensity={intensity} focus={[fx, fy]} speed={0.24} />
-      <Motes brand={brand} count={38} opacity={0.3} />
+      <AuroraField
+        brand={brand}
+        // A light touch on purpose. Audio-reactivity that is obvious reads as
+        // a visualiser; at this depth the viewer only registers that the image
+        // is alive.
+        intensity={intensity * (1 + bass * 0.1)}
+        bloom={brand.bloom * (1 + bass * 0.45)}
+        focus={[fx, fy]}
+        speed={0.24}
+      />
+      <Motes brand={brand} count={38} opacity={0.3 + bass * 0.22} />
     </AbsoluteFill>
+  );
+};
+
+/**
+ * A short bloom of light on each cut.
+ *
+ * Paired with the sub impact on the same frame, this is the single cheapest
+ * way to make a cut feel deliberate rather than accidental. Kept under 0.2s
+ * and well below white — a full-frame white flash is a cliche and hurts at
+ * phone brightness.
+ */
+const CutFlash: React.FC<{
+  brand: Brand;
+  cuts: number[];
+  strength: number;
+}> = ({ brand, cuts, strength }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const t = frame / fps;
+  let peak = 0;
+  for (const c of cuts) {
+    const d = t - c;
+    if (d >= 0 && d < 0.2) peak = Math.max(peak, (1 - d / 0.2) ** 2);
+  }
+  if (peak <= 0.001) return null;
+  return (
+    <AbsoluteFill
+      style={{
+        pointerEvents: "none",
+        mixBlendMode: "screen",
+        opacity: peak * strength,
+        background: `radial-gradient(ellipse 90% 70% at 50% 45%, ${alpha(
+          brand.color.accent2,
+          0.32,
+        )} 0%, ${alpha(brand.color.accent, 0.16)} 45%, transparent 78%)`,
+      }}
+    />
   );
 };
 
@@ -127,17 +220,26 @@ export const LaunchFilm: React.FC<FilmConfig> = ({
   scenes,
   music,
   musicVolume = 0.34,
+  envelope,
+  bed,
+  bedVolume = 0.5,
+  cutSound,
+  cutVolume = 0.5,
+  sfx,
+  cutFlash = 0.8,
   letterbox,
 }) => {
   useFontsReady();
   const { fps } = useVideoConfig();
   const placed = layoutOverlapped(filmSlots(scenes), fps, SCENE_OVERLAP);
-  const totalSeconds =
-    filmDurationInFrames(scenes, fps) / fps;
+  const totalSeconds = filmDurationInFrames(scenes, fps) / fps;
+  // Every scene boundary after the first. Drives both the cut flash and the
+  // cut impacts, so picture and sound cannot drift apart.
+  const cutTimes = placed.slice(1).map((p) => p.fromFrame / fps);
 
   return (
     <FilmGrade brand={brand} letterbox={letterbox}>
-      <Backdrop brand={brand} total={totalSeconds} />
+      <Backdrop brand={brand} total={totalSeconds} envelope={envelope} />
 
       {scenes.map((scene, i) => {
         const slot = placed[i]!;
@@ -172,7 +274,37 @@ export const LaunchFilm: React.FC<FilmConfig> = ({
         );
       })}
 
+      {cutFlash > 0 ? (
+        <CutFlash brand={brand} cuts={cutTimes} strength={cutFlash} />
+      ) : null}
+
+      {bed ? <Audio src={bed} volume={bedVolume} /> : null}
       {music ? <Audio src={music} volume={musicVolume} /> : null}
+
+      {/* Cut impacts, placed from the layout rather than restated by hand. */}
+      {cutSound
+        ? cutTimes.map((at, i) => (
+            <Sequence
+              key={`cut-${i}`}
+              from={Math.max(0, Math.round((at - 0.04) * fps))}
+              durationInFrames={Math.round(2 * fps)}
+              name={`sfx-cut-${i}`}
+            >
+              <Audio src={cutSound} volume={cutVolume} />
+            </Sequence>
+          ))
+        : null}
+
+      {sfx?.map((cue, i) => (
+        <Sequence
+          key={`sfx-${i}`}
+          from={Math.max(0, Math.round(cue.at * fps))}
+          durationInFrames={Math.round(4 * fps)}
+          name={`sfx-${i}`}
+        >
+          <Audio src={cue.src} volume={cue.volume ?? 0.6} />
+        </Sequence>
+      ))}
     </FilmGrade>
   );
 };

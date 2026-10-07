@@ -48,7 +48,7 @@ export const HeroScene: React.FC<
   const s = typeScale(format);
   const pad = framePad(format);
   return (
-    <SceneBody dur={dur}>
+    <SceneBody dur={dur} exit="rise">
       <AbsoluteFill
         style={{
           padding: `${pad.y}px ${pad.x}px`,
@@ -97,7 +97,7 @@ export const StatementScene: React.FC<
 > = ({ brand, format, dur, lines, serifLines, accentLines }) => {
   const s = typeScale(format);
   return (
-    <SceneBody dur={dur}>
+    <SceneBody dur={dur} exit="whip">
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", padding: 120 }}>
         <KineticType
           brand={brand}
@@ -478,7 +478,7 @@ export const EndcardScene: React.FC<
   const t = useSeconds();
   const ctaP = track(t, 1.35, 0.9, "heroOut");
   return (
-    <SceneBody dur={dur} exitFor={0.25} exitTravel={-18}>
+    <SceneBody dur={dur} exitFor={0.25} exit="recede">
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", gap: 0 }}>
         {logo ? (
           <Wipe start={0.1} duration={0.9} from="bottom" style={{ marginBottom: 40 * s }}>
@@ -551,7 +551,7 @@ export const UIFlowScene: React.FC<
   const pad = framePad(format);
   const landscape = format === "landscape";
   return (
-    <SceneBody dur={dur}>
+    <SceneBody dur={dur} exit="recede">
       <GridField brand={brand} opacity={0.22} />
       <AbsoluteFill
         style={{

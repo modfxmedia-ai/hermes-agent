@@ -95,6 +95,9 @@ export interface AuroraFieldProps {
   focus?: [number, number];
   /** Darken the lower half so headline type has a clean bed. */
   grounded?: number;
+  /** Overrides brand.bloom. Drive this from an audio envelope to make the
+   *  field breathe with the track. */
+  bloom?: number;
   opacity?: number;
   scaleFactor?: number;
 }
@@ -107,6 +110,7 @@ export const AuroraField: React.FC<AuroraFieldProps> = ({
   warp = 0.85,
   focus = [0.08, 0.04],
   grounded = 0.45,
+  bloom,
   opacity = 1,
   scaleFactor = 0.5,
 }) => {
@@ -122,10 +126,10 @@ export const AuroraField: React.FC<AuroraFieldProps> = ({
       uScale: scale,
       uWarp: warp,
       uFocus: focus as number[],
-      uBloom: brand.bloom,
+      uBloom: bloom ?? brand.bloom,
       uGrounded: grounded,
     }),
-    [brand, intensity, speed, scale, warp, focus, grounded],
+    [brand, intensity, speed, scale, warp, focus, grounded, bloom],
   );
 
   return (
