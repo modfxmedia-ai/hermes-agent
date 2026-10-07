@@ -255,6 +255,13 @@ export const BodyCopy: React.FC<{
   );
 };
 
+/** `#RRGGBB` + 0..1 alpha -> `#RRGGBBAA`. */
+const hex = (color: string, a: number): string =>
+  color +
+  Math.round(Math.max(0, Math.min(1, a)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+
 /**
  * Specular sweep across an element. Pass it as a child of a `position:
  * relative` wrapper with the same clip as the content.
@@ -273,10 +280,10 @@ export const LightSweep: React.FC<{
 }> = ({
   start,
   duration = 1.1,
-  width = 22,
+  width = 7,
   angle = -18,
   color = "#FFFFFF",
-  intensity = 0.5,
+  intensity = 0.26,
 }) => {
   const t = useSeconds();
   const p = track(t, start, duration, "cinematic");
@@ -286,14 +293,27 @@ export const LightSweep: React.FC<{
     <div
       style={{
         position: "absolute",
-        inset: `-20% -40%`,
+        inset: "-12% -18%",
         pointerEvents: "none",
         mixBlendMode: "screen",
-        background: `linear-gradient(${90 + angle}deg, transparent ${x - width}%, ${color}${Math.round(
-          intensity * 255,
-        )
-          .toString(16)
-          .padStart(2, "0")} ${x}%, transparent ${x + width}%)`,
+        // Fade the overlay out at its own bounds. Screen-blending a gradient
+        // box over a near-black frame makes the box itself visible as a
+        // lighter rectangle, even where the gradient reads as transparent,
+        // because CSS interpolates toward transparent-black rather than
+        // toward the backdrop. The mask removes the edge entirely.
+        maskImage:
+          "radial-gradient(ellipse 60% 70% at 50% 50%, #000 35%, transparent 100%)",
+        WebkitMaskImage:
+          "radial-gradient(ellipse 60% 70% at 50% 50%, #000 35%, transparent 100%)",
+        // Three stops, not two: a narrow bright core inside a wider soft
+        // falloff. A single wide stop reads as a grey slab passing over the
+        // type rather than as light catching an edge.
+        background: `linear-gradient(${90 + angle}deg,
+          transparent ${x - width * 2}%,
+          ${hex(color, intensity * 0.28)} ${x - width * 0.6}%,
+          ${hex(color, intensity)} ${x}%,
+          ${hex(color, intensity * 0.28)} ${x + width * 0.6}%,
+          transparent ${x + width * 2}%)`,
       }}
     />
   );

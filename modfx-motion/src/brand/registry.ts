@@ -1,8 +1,10 @@
 import { type Brand, MODFX } from "./tokens";
+import { HEROSHIP } from "./brands/heroship";
 import { NORTHLINE } from "./brands/northline";
 
 export const BRANDS: Record<string, Brand> = {
   modfx: MODFX,
+  heroship: HEROSHIP,
   northline: NORTHLINE,
 };
 

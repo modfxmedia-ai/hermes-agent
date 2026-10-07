@@ -8,6 +8,7 @@ import {
 } from "./templates/LaunchFilm";
 import { NORTHLINE_BRAND, NORTHLINE_SCENES } from "./films/northline";
 import { FLOW_EXAMPLE, FLOW_EXAMPLE_BRAND } from "./films/flow-example";
+import { HEROSHIP_BRAND, HEROSHIP_SCENES } from "./films/heroship";
 import type { Brand } from "./brand/tokens";
 import type { FormatName } from "./scenes/Shell";
 
@@ -57,6 +58,7 @@ const registerFilm = (
 
 export const Root: React.FC = () => (
   <>
+    {registerFilm("Heroship", HEROSHIP_BRAND, HEROSHIP_SCENES)}
     {registerFilm("Northline", NORTHLINE_BRAND, NORTHLINE_SCENES)}
     {/* Reference composition for the product-interaction scene. */}
     {registerFilm("FlowExample", FLOW_EXAMPLE_BRAND, FLOW_EXAMPLE, undefined, [
