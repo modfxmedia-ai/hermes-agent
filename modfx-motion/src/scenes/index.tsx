@@ -580,7 +580,7 @@ export const UIFlowScene: React.FC<
                 <KineticType
                   brand={brand}
                   lines={headline}
-                  size={50 * s}
+                  size={55 * s}
                   start={0.3}
                   stagger={0.07}
                   lineHeight={1.12}
@@ -593,12 +593,33 @@ export const UIFlowScene: React.FC<
           </div>
         ) : null}
 
+        <div
+          style={{
+            position: "relative",
+            width: landscape ? "60%" : "96%",
+            height: landscape ? "72%" : "54%",
+            flexShrink: 0,
+          }}
+        >
+          {/* Spill light. A lit screen throws colour onto what is behind it;
+              without this the window looks pasted onto the frame. */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "-14%",
+              background: `radial-gradient(ellipse 60% 55% at 50% 50%, ${alpha(
+                brand.color.accent,
+                0.2,
+              )} 0%, transparent 70%)`,
+              filter: "blur(28px)",
+            }}
+          />
         <BrowserFrame
           brand={brand}
           url={app.url}
           start={0.4}
-          width={landscape ? "60%" : "96%"}
-          height={landscape ? "80%" : "56%"}
+          width="100%"
+          height="100%"
           tilt={landscape ? -3 : 0}
           style={{ flexShrink: 0 }}
         >
@@ -616,6 +637,7 @@ export const UIFlowScene: React.FC<
           />
           <Cursor brand={brand} steps={steps} start={0.55} />
         </BrowserFrame>
+        </div>
       </AbsoluteFill>
     </SceneBody>
   );

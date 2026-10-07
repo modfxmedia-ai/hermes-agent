@@ -47,6 +47,13 @@ export const HEROSHIP_SCENES: FilmScene[] = [
       activeNav: 2,
       typed: { text: "new patient", at: 0.9, over: 0.8 },
       rows: [
+        // Ambient rows, present from the first frame. A console with one row
+        // in it looks like a prototype; the three narrative rows below land
+        // on top of a populated board, which is what a real product looks
+        // like. Labels mirror the four pillars rather than asserting volume.
+        { label: "Intake queue", meta: "marketing engine", at: 0 },
+        { label: "Consult scheduled", meta: "telehealth platform", at: 0 },
+        { label: "Provider roster", meta: "50-state network", at: 0 },
         { label: "Campaign delivering", meta: "marketing engine", at: 2.4, tag: "Live" },
         { label: "Provider matched", meta: "licensed in state", at: 3.1, tag: "Network" },
         { label: "Routed to pharmacy", meta: "supply fulfilled", at: 3.8, tag: "Shipped", accent: true },

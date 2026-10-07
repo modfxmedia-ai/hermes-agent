@@ -188,7 +188,11 @@ export const AppWindow: React.FC<{
         width,
         height,
         display: "flex",
-        background: brand.color.bgDeep,
+        // A product window on a near-black film has to be lifted well clear
+        // of the page, or it reads as a hole rather than as a screen. The
+        // panel sits above the film background and carries its own top light,
+        // the way a real display does.
+        background: `linear-gradient(176deg, ${alpha(brand.color.ink, 0.07)} 0%, transparent 42%), ${brand.color.surface}`,
         color: brand.color.ink,
         fontFamily: brand.type.body,
         overflow: "hidden",
@@ -201,7 +205,7 @@ export const AppWindow: React.FC<{
           flexShrink: 0,
           borderRight: `1px solid ${brand.color.line}`,
           padding: `${20 * s}px ${14 * s}px`,
-          background: alpha(brand.color.surface, 0.55),
+          background: alpha(brand.color.bgDeep, 0.55),
         }}
       >
         <div
@@ -334,10 +338,10 @@ export const AppWindow: React.FC<{
                   padding: `${11 * s}px ${13 * s}px`,
                   marginBottom: 7 * s,
                   borderRadius: 9 * s,
-                  border: `1px solid ${row.accent ? alpha(brand.color.accent, 0.4) : brand.color.line}`,
+                  border: `1px solid ${row.accent ? alpha(brand.color.accent, 0.55) : alpha(brand.color.ink, 0.1)}`,
                   background: row.accent
-                    ? alpha(brand.color.accent, 0.09)
-                    : alpha(brand.color.surface, 0.5),
+                    ? alpha(brand.color.accent, 0.17)
+                    : alpha(brand.color.ink, 0.055),
                   opacity: p,
                   transform: `translate3d(0, ${(1 - p) * 14}px, 0)`,
                 }}
